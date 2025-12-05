@@ -1,0 +1,442 @@
+/* =====================================
+   ROOT COLOR SYSTEM (STRICTLY YOUR COLORS)
+====================================== */
+:root {
+  --bg: #0f1724;
+  --card: rgba(255, 255, 255, 0.06);
+  --glass: rgba(255, 255, 255, 0.08);
+  --muted: rgba(255, 255, 255, 0.8);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(145deg, #0a0f1c, #101b33);
+  color: white;
+  font-family: "Poppins", sans-serif;
+}
+
+/* =====================================
+   MAIN CONTAINER + CARD
+====================================== */
+.container {
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.glass-card {
+  width: 100%;
+  max-width: 1100px;
+  padding: 30px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+h1,
+h2 {
+  margin-bottom: 12px;
+}
+
+/* =====================================
+   TOP RIGHT ACTION BUTTONS
+====================================== */
+.top-actions {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 12px;
+}
+
+.reset-stock-btn,
+.show-bills-btn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  transition: 0.2s ease;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.reset-stock-btn {
+  background: linear-gradient(135deg, #ff5e62, #ff9966);
+}
+
+.reset-stock-btn:hover,
+.show-bills-btn:hover {
+  transform: translateY(-3px);
+}
+
+/* =====================================
+   CUSTOMER INPUT
+====================================== */
+.customer-block input,
+.customer-input {
+  width: 260px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.customer-status {
+  margin-bottom: 15px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* =====================================
+   BILL HISTORY PANEL
+====================================== */
+.bill-history {
+  background: var(--glass);
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 20px;
+}
+
+.bill-history-item {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.close-history-btn {
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  cursor: pointer;
+}
+
+/* =====================================
+   PRODUCT SCROLL SECTION
+====================================== */
+.scroll-container {
+  display: flex;
+  overflow-x: auto;
+  gap: 20px;
+  padding: 20px 5px;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+}
+
+.scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+}
+
+/* COLUMN = 2 PRODUCT CARDS STACKED */
+.scroll-column {
+  flex: 0 0 260px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* PRODUCT CARD */
+.scroll-card {
+  padding: 18px;
+  height: 200px;
+  background: var(--glass);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: 0.25s;
+}
+
+.scroll-card:hover {
+  transform: translateY(-6px);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.product-name {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.product-price {
+  font-size: 15px;
+  opacity: 0.9;
+}
+
+.product-stock {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* PRODUCT ACTION AREA */
+.product-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.product-actions input {
+  width: 80px;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  font-weight: 600;
+}
+
+.product-actions button {
+  flex: 1;
+  padding: 8px;
+  background: linear-gradient(135deg, #ff8a3d, #ff5c00);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.product-actions button:hover {
+  transform: translateY(-3px);
+}
+
+/* =====================================
+   BILL TABLE
+====================================== */
+.bill-table {
+  width: 100%;
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+/* HEADER */
+.bill-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  color: #dfe8ff;
+  font-size: 14px;
+}
+
+/* EMPTY STATE */
+.bill-empty {
+  padding: 14px;
+  text-align: center;
+  color: #b8c2d8;
+}
+
+/* ROW */
+.bill-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;
+  padding: 12px 15px;
+  font-size: 14px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #fff;
+  transition: 0.25s ease;
+}
+
+.bill-table-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* REMOVE BUTTON */
+.remove-btn {
+  background: rgba(255, 77, 77, 0.85);
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.remove-btn:hover {
+  background: rgba(255, 45, 45, 1);
+  transform: scale(1.05);
+}
+
+/* =====================================
+   SAVE BUTTON
+====================================== */
+.save-btn {
+  margin-top: 20px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #16c784, #0ea76b);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.save-btn:hover {
+  transform: translateY(-4px);
+}
+
+/* ==============================
+   TOAST NOTIFICATION SYSTEM
+============================== */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 9999;
+}
+
+.toast {
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  backdrop-filter: blur(8px);
+  color: white;
+  min-width: 200px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+  animation: toastSlide 0.4s ease forwards;
+}
+
+.toast.success {
+  background: rgba(46, 204, 113, 0.9);
+}
+
+.toast.error {
+  background: rgba(231, 76, 60, 0.9);
+}
+
+.toast.warning {
+  background: rgba(241, 196, 15, 0.9);
+}
+
+@keyframes toastSlide {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+/* ===========================
+   BILL CONFIRMATION PAGE FIXED
+=========================== */
+
+.bill-confirm-card {
+  padding: 35px;
+}
+
+/* Header (Bill No, Customer, Date) */
+.invoice-header {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 15px 18px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--muted);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: fit-content;
+}
+
+/* Table Wrapper */
+.print-table {
+  margin-top: 12px;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Table Header */
+.print-table .bill-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.16);
+  font-weight: 600;
+  color: #dfe8ff;
+}
+
+/* Table Row */
+.print-table .bill-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.print-table .bill-table-row:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Total Amount Box (Aligned Right) */
+.invoice-total-bar {
+  margin-top: 22px;
+  padding: 20px 25px;
+  width: 320px;
+  margin-left: auto;
+  /* THIS FIXES ALIGNMENT */
+  text-align: right;
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.invoice-total-bar h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.invoice-total-bar h1 {
+  margin: 5px 0 0 0;
+  font-size: 32px;
+  color: #4ade80;
+  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* Button */
+.bill-confirm-card button {
+  margin-top: 25px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #16c784, #0ea76b);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.bill-confirm-card button:hover {
+  transform: translateY(-4px);
+}
