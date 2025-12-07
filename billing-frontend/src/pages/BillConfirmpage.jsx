@@ -13,15 +13,22 @@ export default function BillConfirmPage() {
   useEffect(() => {
     if (!billId) return;
 
-    // Load Current Bill
+    // Load current bill first
     API.get(`/bill/${billId}`)
       .then((res) => {
-        setBillData(res.data);
+        const data = res.data;
+        setBillData(data);
 
-        // Load all bills of SAME customer
-        const customer = res.data.bill.customer_name;
+        const customer = data.bill.customer_name;
+
+        // Load all bills of same customer
         API.get(`/bills/${customer}`).then((r) => {
-          setPreviousBills(r.data.bills);
+          const all = r.data.bills || [];
+
+          // Exclude current bill → previous bills only
+          const prev = all.filter((b) => b.id !== Number(billId));
+
+          setPreviousBills(prev);
         });
       })
       .catch(() => alert("Failed to load bill"));
@@ -29,40 +36,54 @@ export default function BillConfirmPage() {
 
   if (!billId)
     return (
-      <div className="container">
-        <div className="glass-card">
+      <div className="confirm-container">
+        <div className="confirm-card">
           <h2>No Bill Selected</h2>
-          <button onClick={() => navigate("/")}>Back</button>
+          <button className="new-bill-btn" onClick={() => navigate("/")}>
+            Go Home
+          </button>
         </div>
       </div>
     );
 
   if (!billData)
     return (
-      <div className="container">
-        <div className="glass-card"><h2>Loading...</h2></div>
+      <div className="confirm-container">
+        <div className="confirm-card"><h2>Loading...</h2></div>
       </div>
     );
 
   const { bill, items } = billData;
+  const subtotal = items.reduce((s, i) => s + Number(i.total), 0);
+  const tax = subtotal * 0.1;
+  const total = subtotal + tax;
 
   return (
-    <div className="container">
-      <div className="glass-card bill-confirm-card">
+    <div className="confirm-container">
 
-        <h1>Bills</h1>
+      {/* Animated success icon */}
+      <div className="success-icon">
+        <div className="check">&#10003;</div>
+      </div>
 
-        {/* CURRENT BILL SECTION */}
-        <div className="invoice-header">
-          <div><strong>Bill No:</strong> {bill.id}</div>
-          <div><strong>Customer:</strong> {bill.customer_name}</div>
-          <div><strong>Date:</strong> {new Date(bill.created_at).toLocaleString()}</div>
+      <h1 className="success-title">Bill Saved!</h1>
+      <p className="success-sub">Transaction completed successfully</p>
+
+      <div className="confirm-card">
+
+        {/* Bill Header */}
+        <div className="bill-header">
+          <span className="bill-id">📄 Bill #{bill.id.toString().padStart(4, "0")}</span>
+          <span className="bill-date">{new Date(bill.created_at).toLocaleString()}</span>
         </div>
 
-        <h2>Purchased Items</h2>
+        <div className="bill-info">
+          <strong>Customer:</strong> {bill.customer_name}
+        </div>
 
-        <div className="bill-table print-table">
-          <div className="bill-table-header">
+        {/* ITEM TABLE */}
+        <div className="confirm-table">
+          <div className="confirm-row header">
             <span>Item</span>
             <span>Qty</span>
             <span>Price</span>
@@ -70,7 +91,7 @@ export default function BillConfirmPage() {
           </div>
 
           {items.map((it) => (
-            <div className="bill-table-row" key={it.id}>
+            <div className="confirm-row" key={it.id}>
               <span>{it.product_name}</span>
               <span>{it.quantity}</span>
               <span>₹{Number(it.price).toFixed(2)}</span>
@@ -79,31 +100,51 @@ export default function BillConfirmPage() {
           ))}
         </div>
 
-        <div className="invoice-total-bar">
-          <h2>Total Amount</h2>
-          <h1>₹{Number(bill.total_amount).toFixed(2)}</h1>
+        {/* TOTALS */}
+        <div className="totals">
+          <div className="tot-row">
+            <span>Subtotal</span>
+            <span>₹{subtotal.toFixed(2)}</span>
+          </div>
+
+          <div className="tot-row">
+            <span>Tax (10%)</span>
+            <span>₹{tax.toFixed(2)}</span>
+          </div>
+
+          <div className="tot-row grand">
+            <span>Grand Total</span>
+            <span className="grand-amount">₹{total.toFixed(2)}</span>
+          </div>
         </div>
 
         {/* PREVIOUS BILLS SECTION */}
-        <h2 style={{ marginTop: "35px" }}>Previous Bills</h2>
+        <h2 className="prev-title">Previous Bills</h2>
 
-        <div className="bill-table print-table">
-          <div className="bill-table-header">
+        <div className="confirm-table prev-table">
+          <div className="confirm-row header">
             <span>Bill No</span>
             <span>Date</span>
-            <span>Total Amount</span>
-            <span>View</span>
+            <span>Total</span>
+            <span>Open</span>
           </div>
 
+          {previousBills.length === 0 && (
+            <div className="confirm-row" style={{ opacity: 0.7 }}>
+              <span>No previous bills</span>
+            </div>
+          )}
+
           {previousBills.map((b) => (
-            <div className="bill-table-row" key={b.id}>
-              <span>{b.id}</span>
+            <div className="confirm-row" key={b.id}>
+              <span>#{b.id}</span>
               <span>{new Date(b.created_at).toLocaleString()}</span>
               <span>₹{Number(b.total_amount).toFixed(2)}</span>
               <button
-                className="remove-btn"
-                onClick={() => navigate("/bill-confirm", { state: { billId: b.id } })}
-                style={{ borderRadius: 6 }}
+                className="open-btn"
+                onClick={() =>
+                  navigate("/bill-confirm", { state: { billId: b.id } })
+                }
               >
                 Open
               </button>
@@ -111,8 +152,16 @@ export default function BillConfirmPage() {
           ))}
         </div>
 
-        <button onClick={() => navigate("/")}>Create New Bill</button>
+        {/* ACTION BUTTONS */}
+        <div className="confirm-actions">
+          <button className="print-btn" onClick={() => window.print()}>
+            🖨 Print
+          </button>
 
+          <button className="new-bill-btn" onClick={() => navigate("/")}>
+            ➕ New Bill
+          </button>
+        </div>
       </div>
     </div>
   );
