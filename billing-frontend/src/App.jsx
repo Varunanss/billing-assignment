@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import BillingPage from "./pages/BillingPage";
-import BillConfirmPage from "./pages/BillConfirmPage";
+import BillConfirmPage from "./pages/BillConfirmpage";
 
 function App() {
   return (
