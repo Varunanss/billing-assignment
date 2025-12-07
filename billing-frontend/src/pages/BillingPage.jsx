@@ -6,261 +6,264 @@ export default function BillingPage() {
   const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
+  const [filter, setFilter] = useState("");
+  const [qtyInputs, setQtyInputs] = useState({});
   const [billItems, setBillItems] = useState([]);
   const [customerName, setCustomerName] = useState("");
-  const [qtyInputs, setQtyInputs] = useState({});
-  const [billHistory, setBillHistory] = useState([]);
-  const [customerStatus, setCustomerStatus] = useState("");
-  const [showHistory, setShowHistory] = useState(false);
-
   const [toasts, setToasts] = useState([]);
 
-  // --------------------------
-  // SHOW TOAST FUNCTION
-  // --------------------------
-  const showToast = (message, type = "success") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
+  const TAX_PERCENT = 10;
 
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 2200);
+  // Toast Function
+  const showToast = (message, kind = "info") => {
+    const id = Date.now() + Math.random();
+    setToasts((t) => [...t, { id, message, kind }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2400);
   };
 
-  // --------------------------
-  // THEME TOGGLE
-  // --------------------------
-  const toggleTheme = () => {
-    document.body.classList.toggle("light");
-
-    // Save preference
-    const isLight = document.body.classList.contains("light");
-    localStorage.setItem("theme", isLight ? "light" : "dark");
-  };
-
-  // Apply theme from storage
+  // Load Products
   useEffect(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved === "light") document.body.classList.add("light");
+    API.get("/products")
+      .then((r) => setProducts(r.data))
+      .catch(() => showToast("Backend not running!", "error"));
   }, []);
 
-  // ------------------------------
-  // RESET STOCK
-  // ------------------------------
+  // Reset Stock
   const resetStock = async () => {
     try {
       await API.post("/reset-stock");
       const res = await API.get("/products");
       setProducts(res.data);
-      showToast("Stock reset!", "success");
+      showToast("Stock Reset Successfully!", "success");
     } catch {
       showToast("Failed to reset stock", "error");
     }
   };
 
-  // ------------------------------
-  // LOAD PRODUCTS
-  // ------------------------------
-  useEffect(() => {
-    API.get("/products")
-      .then((res) => setProducts(res.data))
-      .catch(() => showToast("Backend not running!", "error"));
-  }, []);
-
-  // ------------------------------
-  // CHECK CUSTOMER HISTORY
-  // ------------------------------
-  const checkCustomer = async () => {
-    if (!customerName.trim()) return showToast("Enter customer name", "warning");
-
-    try {
-      const res = await API.get(`/bills/${customerName}`);
-      setCustomerStatus(res.data.exists ? "Existing User ✓" : "New User");
-      setBillHistory(res.data.bills);
-      setShowHistory(true);
-    } catch {
-      showToast("Error retrieving history", "error");
-    }
+  // Placeholder for “Show Bills”
+  const showBills = () => {
+    showToast("Show Bills UI coming soon!", "info");
   };
 
-  // ------------------------------
-  // ADD TO BILL
-  // ------------------------------
-  const addToBill = (product) => {
-    const qty = Number(qtyInputs[product.id] || 0);
+  const formatINR = (n) => `₹${Number(n).toFixed(2)}`;
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(filter.toLowerCase())
+  );
 
-    if (!qty || qty <= 0) return showToast("Enter valid qty", "warning");
-    if (qty > product.stock) return showToast("Not enough stock!", "error");
+  const setQty = (productId, qty) => {
+    if (qty === "" || qty === null) {
+      setQtyInputs((s) => ({ ...s, [productId]: "" }));
+      return;
+    }
+    const n = Number(qty);
+    if (!Number.isNaN(n) && n >= 0) setQtyInputs((s) => ({ ...s, [productId]: n }));
+  };
+
+  const increment = (id) =>
+    setQtyInputs((s) => ({ ...s, [id]: (Number(s[id] || 0) + 1) }));
+
+  const decrement = (id) =>
+    setQtyInputs((s) => {
+      const cur = Number(s[id] || 0);
+      const next = Math.max(0, cur - 1);
+      return { ...s, [id]: next === 0 ? "" : next };
+    });
+
+  // Add to bill
+  const addToBill = (p) => {
+    const qty = Number(qtyInputs[p.id] || 0);
+
+    if (!qty || qty <= 0) return showToast("Enter quantity", "warning");
+    if (qty > p.stock) return showToast("Not enough stock", "error");
 
     setBillItems((prev) => [
       ...prev,
       {
-        id: product.id,
-        name: product.name,
-        price: Number(product.price),
+        product_id: p.id,
+        name: p.name,
+        price: Number(p.price),
         qty,
-        total: qty * product.price,
+        total: qty * p.price,
       },
     ]);
 
-    showToast("Added to bill!", "success");
+    setProducts((prev) =>
+      prev.map((x) => (x.id === p.id ? { ...x, stock: x.stock - qty } : x))
+    );
+
+    showToast(`${p.name} added`, "success");
   };
 
-  const removeItem = (index) => {
-    setBillItems((prev) => prev.filter((_, i) => i !== index));
-    showToast("Item removed", "warning");
+  const removeBillRow = (idx) => {
+    const item = billItems[idx];
+
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === item.product_id ? { ...p, stock: p.stock + item.qty } : p
+      )
+    );
+
+    setBillItems((prev) => prev.filter((_, i) => i !== idx));
+    showToast("Removed", "warning");
   };
 
-  const grandTotal = billItems.reduce((s, it) => s + it.total, 0);
+  const subtotal = billItems.reduce((s, it) => s + it.total, 0);
+  const tax = subtotal * (TAX_PERCENT / 100);
+  const grandTotal = subtotal + tax;
 
-  // ------------------------------
-  // SAVE BILL
-  // ------------------------------
   const saveBill = async () => {
-    if (!customerName) return showToast("Enter customer name", "warning");
-    if (billItems.length === 0) return showToast("No items added!", "warning");
+    if (!customerName.trim()) return showToast("Enter customer name", "warning");
+    if (billItems.length === 0) return showToast("Add items first", "warning");
 
     const payload = {
       customer_name: customerName,
-      items: billItems.map((i) => ({
-        product_id: i.id,
-        quantity: i.qty,
+      items: billItems.map((it) => ({
+        product_id: it.product_id,
+        quantity: it.qty,
       })),
     };
 
     try {
       const res = await API.post("/bill", payload);
       navigate("/bill-confirm", { state: { billId: res.data.bill_id } });
-    } catch (err) {
+    } catch {
       showToast("Failed to save bill", "error");
     }
   };
 
   return (
-    <div className="container">
-      <div className="glass-card">
+    <div className="pos-root">
+      {/* LEFT SECTION */}
+      <div className="pos-left">
 
+        {/* HEADER with Reset Stock button */}
+        <header className="pos-header">
+          <div className="brand">
+            <div className="brand-name">Billing Assesment</div>
+          </div>
 
+          <div className="header-right">
+            <button className="header-btn" onClick={resetStock}>Reset Stock</button>
+            <span className="date">{new Date().toLocaleString()}</span>
+          </div>
+        </header>
 
-        {/* Top Right Buttons */}
-        <div className="top-actions">
-          <button className="show-bills-btn" onClick={checkCustomer}>
-            Show Bills
-          </button>
-          <button className="reset-stock-btn" onClick={resetStock}>
-            Reset Stock
-          </button>
+        {/* SEARCH */}
+        <div className="pos-search">
+          <input
+            type="search"
+            placeholder="Search products..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
         </div>
 
-        <h1>Billing Application</h1>
-
-        {/* Customer Input */}
-        <input
-          type="text"
-          placeholder="Customer Name"
-          value={customerName}
-          onChange={(e) => setCustomerName(e.target.value)}
-          className="customer-input"
-        />
-
-        {customerStatus && <div className="customer-status">{customerStatus}</div>}
-
-        {/* Bill History */}
-        {showHistory && (
-          <div className="bill-history">
-            <h3>Bill History</h3>
-            {billHistory.length === 0 ? (
-              <p>No past bills</p>
-            ) : (
-              billHistory.map((b) => (
-                <div className="bill-history-item" key={b.id}>
-                  Bill #{b.id} — ₹{b.total_amount}
+        {/* PRODUCTS GRID */}
+        <main className="product-grid">
+          {filteredProducts.length === 0 ? (
+            <div className="empty-grid">No products found</div>
+          ) : (
+            filteredProducts.map((p) => (
+              <article className="product-card" key={p.id}>
+                <div className="product-top">
+                  <div className="product-name">{p.name}</div>
+                  <div className={`stock-badge ${p.stock === 0 ? "out" : ""}`}>
+                    {p.stock > 0 ? `${p.stock} in stock` : "Out of stock"}
+                  </div>
                 </div>
-              ))
-            )}
-            <button className="close-history-btn" onClick={() => setShowHistory(false)}>
-              Close
-            </button>
-          </div>
-        )}
 
-        {/* Products */}
-        <h2>Products</h2>
-        <div className="scroll-container">
-          {Array.from({ length: Math.ceil(products.length / 2) }).map((_, colIndex) => {
-            const p1 = products[colIndex * 2];
-            const p2 = products[colIndex * 2 + 1];
+                <div className="product-mid">
+                  <div className="price">{formatINR(p.price)}</div>
+                </div>
 
-            return (
-              <div className="scroll-column" key={colIndex}>
-                {[p1, p2].map(
-                  (p, i) =>
-                    p && (
-                      <div className="scroll-card" key={i}>
-                        <div className="product-name">{p.name}</div>
-                        <div className="product-price">₹{p.price}</div>
-                        <div className="product-stock">Stock: {p.stock}</div>
+                <div className="product-actions">
+                  <div className="qty-controls">
+                    <button className="qty-btn" onClick={() => decrement(p.id)}>-</button>
+                    <input
+                      className="qty-input"
+                      type="number"
+                      value={qtyInputs[p.id] ?? ""}
+                      onChange={(e) =>
+                        setQty(p.id, e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                    />
+                    <button className="qty-btn" onClick={() => increment(p.id)}>+</button>
+                  </div>
 
-                        <div className="product-actions">
-                          <input
-                            type="number"
-                            min={1}
-                            value={qtyInputs[p.id] || ""}
-                            onChange={(e) =>
-                              setQtyInputs({
-                                ...qtyInputs,
-                                [p.id]: e.target.value,
-                              })
-                            }
-                            placeholder="Qty"
-                          />
-                          <button onClick={() => addToBill(p)}>Add</button>
-                        </div>
-                      </div>
-                    )
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Bill Items Table */}
-        <h2>Bill Items</h2>
-        <div className="bill-table">
-          <div className="bill-table-header">
-            <span>Item</span><span>Qty</span><span>Price</span><span>Total</span><span>Remove</span>
-          </div>
-
-          {billItems.length === 0 && (
-            <div className="bill-empty">No items added</div>
+                  <button
+                    className="add-btn"
+                    disabled={p.stock === 0}
+                    onClick={() => addToBill(p)}
+                  >
+                    Add
+                  </button>
+                </div>
+              </article>
+            ))
           )}
-
-          {billItems.map((it, idx) => (
-            <div className="bill-table-row" key={idx}>
-              <span>{it.name}</span>
-              <span>{it.qty}</span>
-              <span>₹{it.price.toFixed(2)}</span>
-              <span>₹{it.total.toFixed(2)}</span>
-              <button className="remove-btn" onClick={() => removeItem(idx)}>
-                ✖
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <h2>Grand Total: ₹{grandTotal.toFixed(2)}</h2>
-
-        <button className="save-btn" onClick={saveBill}>
-          Save Bill
-        </button>
+        </main>
       </div>
 
-      {/* Toast Notification Container */}
-      <div className="toast-container">
-        {toasts.map((t) => (
-          <div key={t.id} className={`toast ${t.type}`}>
-            {t.message}
+      {/* RIGHT BILL PANEL */}
+      <aside className="pos-right">
+        <div className="bill-panel">
+          <h2 className="panel-title">Current Bill</h2>
+
+          <label className="customer-label">Customer</label>
+          <input
+            className="customer-field"
+            placeholder="Enter customer name"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+          />
+
+          <div className="cart-area">
+            {billItems.length === 0 ? (
+              <div className="cart-empty">
+                <div className="cart-empty-emoji">🧾</div>
+                <div>No items yet — add products</div>
+              </div>
+            ) : (
+              <>
+                <div className="cart-list">
+                  {billItems.map((it, idx) => (
+                    <div className="cart-row" key={`${it.product_id}-${idx}`}>
+                      <div className="cart-name">{it.name}</div>
+                      <div className="cart-qty">x{it.qty}</div>
+                      <div className="cart-price">{formatINR(it.total)}</div>
+                      <button className="cart-remove" onClick={() => removeBillRow(idx)}>✖</button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="summary">
+                  <div className="summary-row">
+                    <div>Subtotal</div>
+                    <div>{formatINR(subtotal)}</div>
+                  </div>
+                  <div className="summary-row">
+                    <div>Tax ({TAX_PERCENT}%)</div>
+                    <div>{formatINR(tax)}</div>
+                  </div>
+                  <div className="summary-row grand">
+                    <div>Grand Total</div>
+                    <div className="grand-amount">{formatINR(grandTotal)}</div>
+                  </div>
+                </div>
+
+                <button className="save-bill-btn" onClick={saveBill}>
+                  Save Bill
+                </button>
+              </>
+            )}
           </div>
+        </div>
+      </aside>
+
+      {/* TOASTS */}
+      <div className="toast-wrap">
+        {toasts.map((t) => (
+          <div key={t.id} className={`toast ${t.kind}`}>{t.message}</div>
         ))}
       </div>
     </div>
